@@ -8,8 +8,7 @@ const eventForm = document.getElementById('event-form');
 const isLiveCheckbox = document.getElementById('is-live');
 const streamLinkContainer = document.getElementById('stream-link-container');
 
-// Firebase imports for event data
-import { db, collection, getDocs, query, where, orderBy } from './firebase-config.js';
+// Firebase is now available globally via the compat SDK loaded in index.html
 
 // Events array will be populated from Firestore
 let events = [];
@@ -54,13 +53,22 @@ function setupSmoothScroll() {
 // Fetch events from Firestore
 async function fetchEventsFromFirestore() {
     try {
-        const eventsRef = collection(db, 'events');
-        const q = query(eventsRef, where('approved', '==', true), orderBy('eventDate', 'asc'));
-        const querySnapshot = await getDocs(q);
+        // Check if Firebase is available
+        if (!window.firebase || !window.firebaseDb) {
+            console.log('Firebase not available, using fallback');
+            return [];
+        }
         
+        console.log('Attempting to fetch events from Firestore...');
+        const eventsRef = window.firebaseDb.collection('events');
+        const q = eventsRef.where('approved', '==', true);
+        const querySnapshot = await q.get();
+        
+        console.log('Query executed, processing results...');
         events = [];
         querySnapshot.forEach((doc) => {
             const eventData = doc.data();
+            console.log('Processing event:', eventData);
             // Convert Firestore data to match existing event structure
             events.push({
                 id: doc.id,
@@ -78,10 +86,15 @@ async function fetchEventsFromFirestore() {
                 additionalNotes: eventData.additionalNotes
             });
         });
+
+        // Sort events by date in memory
+        events.sort((a, b) => new Date(a.date) - new Date(b.date));
         
+        console.log('Fetched', events.length, 'events');
         return events;
     } catch (error) {
-        console.error('Error fetching events:', error);
+        console.error('Error fetching events:', error.message || error);
+        console.error('Error details:', error);
         return [];
     }
 }

@@ -192,8 +192,33 @@
         </div>
     </footer>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGpF-4Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z",
+            authDomain: "kirtansamagam-b45b9.firebaseapp.com",
+            projectId: "kirtansamagam-b45b9",
+            storageBucket: "kirtansamagam-b45b9.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdefghijklmnopqrstuvwxyz"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        
+        // Make Firebase services available globally
+        window.firebaseDb = firebase.firestore();
+        window.firebaseStorage = firebase.storage();
+    </script>
+
     <!-- Scripts -->
-    <script type="module" src="js/main.js"></script>
-    <script type="module" src="js/submit-form.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/submit-form.js"></script>
 </body>
 </html>
