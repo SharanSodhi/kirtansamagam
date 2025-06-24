@@ -3,60 +3,16 @@ const mobileMenuButton = document.getElementById('mobile-menu-button');
 const mobileMenu = document.getElementById('mobile-menu');
 const todayEventsContainer = document.getElementById('today-events');
 const upcomingEventsContainer = document.getElementById('upcoming-events');
+const eventsContainer = document.getElementById('events-container');
 const eventForm = document.getElementById('event-form');
 const isLiveCheckbox = document.getElementById('is-live');
 const streamLinkContainer = document.getElementById('stream-link-container');
 
-// Sample Events Data (In a real application, this would come from a backend)
-const today = new Date();
-const tomorrow = new Date(today);
-tomorrow.setDate(tomorrow.getDate() + 1);
+// Firebase imports for event data
+import { db, collection, getDocs, query, where, orderBy } from './firebase-config.js';
 
-let events = [
-    {
-        id: 1,
-        title: 'Amrit Vela Kirtan',
-        description: 'Join us for early morning kirtan and simran followed by Asa Di Var',
-        location: 'Guru Nanak Gurdwara Sahib',
-        date: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 4, 30).toISOString(),
-        isLive: true,
-        streamLink: 'https://youtube.com/live/example1'
-    },
-    {
-        id: 2,
-        title: 'Evening Rehras Sahib',
-        description: 'Daily evening Rehras Sahib path and kirtan program',
-        location: 'Singh Sabha Gurdwara',
-        date: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 18, 0).toISOString(),
-        isLive: true,
-        streamLink: 'https://youtube.com/live/example2'
-    },
-    {
-        id: 3,
-        title: 'Kirtan Darbar',
-        description: 'Special kirtan program featuring renowned Ragi Jatha',
-        location: 'Guru Arjan Dev Gurdwara',
-        date: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 16, 0).toISOString(),
-        isLive: false
-    },
-    {
-        id: 4,
-        title: 'Gurmat Camp',
-        description: 'Youth Gurmat camp with focus on Kirtan, Gurbani, and Sikh history',
-        location: 'Khalsa School Auditorium',
-        date: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate() + 7, 10, 0).toISOString(),
-        isLive: false
-    },
-    {
-        id: 5,
-        title: 'Akhand Path Sahib',
-        description: 'Akhand Path Sahib followed by Kirtan Darbar',
-        location: 'Guru Ramdas Gurdwara',
-        date: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate() + 9, 8, 0).toISOString(),
-        isLive: true,
-        streamLink: 'https://youtube.com/live/example3'
-    }
-];
+// Events array will be populated from Firestore
+let events = [];
 
 // Mobile Menu Toggle
 function setupMobileMenu() {
@@ -95,8 +51,46 @@ function setupSmoothScroll() {
 }
 
 
+// Fetch events from Firestore
+async function fetchEventsFromFirestore() {
+    try {
+        const eventsRef = collection(db, 'events');
+        const q = query(eventsRef, where('approved', '==', true), orderBy('eventDate', 'asc'));
+        const querySnapshot = await getDocs(q);
+        
+        events = [];
+        querySnapshot.forEach((doc) => {
+            const eventData = doc.data();
+            // Convert Firestore data to match existing event structure
+            events.push({
+                id: doc.id,
+                title: eventData.title,
+                description: eventData.description,
+                location: eventData.locationName,
+                date: new Date(eventData.eventDate + 'T' + eventData.startTime).toISOString(),
+                isLive: eventData.isOnline && eventData.streamingLink,
+                streamLink: eventData.streamingLink || null,
+                organizer: eventData.organizer,
+                contactName: eventData.contactName,
+                contactInfo: eventData.contactInfo,
+                fullAddress: eventData.fullAddress,
+                endTime: eventData.endTime,
+                additionalNotes: eventData.additionalNotes
+            });
+        });
+        
+        return events;
+    } catch (error) {
+        console.error('Error fetching events:', error);
+        return [];
+    }
+}
+
 // Display Events
-function displayEvents() {
+async function displayEvents() {
+    // Fetch events from Firestore
+    await fetchEventsFromFirestore();
+    
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
@@ -110,16 +104,23 @@ function displayEvents() {
         return eventDate > now;
     });
 
-    // Display today's events
+    // Display today's events (for admin or specific pages)
     if (todayEventsContainer) {
         todayEventsContainer.innerHTML = todayEvents.length ? 
             todayEvents.map(event => createEventCard(event)).join('') :
             '<p class="text-center text-gray-500 col-span-full">No samagams scheduled for today</p>';
     }
 
-    // Display upcoming events
+    // Display upcoming events (for admin or specific pages)
     if (upcomingEventsContainer) {
         upcomingEventsContainer.innerHTML = upcomingEvents.length ?
+            upcomingEvents.map(event => createEventCard(event)).join('') :
+            '<p class="text-center text-gray-500 col-span-full">No upcoming samagams scheduled</p>';
+    }
+
+    // Display all upcoming events for homepage
+    if (eventsContainer) {
+        eventsContainer.innerHTML = upcomingEvents.length ?
             upcomingEvents.map(event => createEventCard(event)).join('') :
             '<p class="text-center text-gray-500 col-span-full">No upcoming samagams scheduled</p>';
     }
@@ -134,7 +135,7 @@ function createEventCard(event) {
                 <h3 class="text-xl font-bold text-amber-900">${event.title}</h3>
                 ${event.isLive ? '<span class="live-badge bg-amber-600 text-white text-xs px-3 py-1 rounded-full font-medium">LIVE</span>' : ''}
             </div>
-            <p class="text-gray-600 mb-6 leading-relaxed">${event.description}</p>
+            <p class="text-gray-600 mb-6 leading-relaxed">${event.description || 'Event details will be updated soon.'}</p>
             <div class="text-sm text-gray-500 space-y-3">
                 <p class="flex items-center">
                     <svg class="w-5 h-5 text-amber-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,6 +153,15 @@ function createEventCard(event) {
                     </svg>
                     <span class="text-amber-900">${formatDate(eventDate)}</span>
                 </p>
+                ${event.organizer ? `
+                    <p class="flex items-center">
+                        <svg class="w-5 h-5 text-amber-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <span class="text-amber-900">Organized by ${event.organizer}</span>
+                    </p>
+                ` : ''}
             </div>
             ${event.isLive && event.streamLink ? `
                 <a href="${event.streamLink}" target="_blank" 
