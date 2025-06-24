@@ -12,24 +12,21 @@
     
     <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-
-        // Firebase configuration (replace with your actual config)
-        const firebaseConfig = {
-            apiKey: "your-api-key",
-            authDomain: "your-project.firebaseapp.com",
-            projectId: "your-project-id",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "your-app-id"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        import { 
+            auth, 
+            db, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            collection,
+            getDocs,
+            doc,
+            updateDoc,
+            deleteDoc,
+            query,
+            where,
+            orderBy
+        } from './js/firebase-config.js';
 
         // Make Firebase available globally
         window.firebaseAuth = auth;
@@ -44,6 +41,7 @@
         window.firebaseDoc = doc;
         window.firebaseUpdateDoc = updateDoc;
         window.firebaseDeleteDoc = deleteDoc;
+        window.firebaseOrderBy = orderBy;
     </script>
 
     <style>

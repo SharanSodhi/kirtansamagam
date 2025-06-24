@@ -104,11 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadDashboardStats() {
         try {
-            // For demo purposes, we'll use mock data
-            // In a real app, you'd fetch from Firestore
             const pendingCount = await getPendingEventsCount();
             const approvedCount = await getApprovedEventsCount();
-            const totalCount = pendingCount + approvedCount;
+            const totalCount = await getTotalEventsCount();
 
             document.getElementById('pending-count').textContent = pendingCount;
             document.getElementById('approved-count').textContent = approvedCount;
@@ -122,8 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             showLoading(true);
             
-            // For demo purposes, we'll use mock data
-            // In a real app, you'd query Firestore for events where approved === false
             const pendingEvents = await getPendingEvents();
             
             const pendingContainer = document.getElementById('pending-events');
@@ -257,12 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             showLoading(true);
             
-            // In a real app, you'd update the Firestore document
-            // const eventRef = window.firebaseDoc(window.firebaseDb, 'events', eventId);
-            // await window.firebaseUpdateDoc(eventRef, { approved: true });
-            
-            // For demo, we'll simulate the approval
-            await simulateApproval(eventId);
+            await approveEventInFirestore(eventId);
             
             showToast('Event approved successfully!', 'success');
             loadPendingEvents();
@@ -279,12 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             showLoading(true);
             
-            // In a real app, you'd delete the Firestore document
-            // const eventRef = window.firebaseDoc(window.firebaseDb, 'events', eventId);
-            // await window.firebaseDeleteDoc(eventRef);
-            
-            // For demo, we'll simulate the rejection
-            await simulateRejection(eventId);
+            await rejectEventInFirestore(eventId);
             
             showToast('Event rejected and deleted', 'success');
             loadPendingEvents();
@@ -297,48 +283,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Mock data and functions for demo purposes
-    let mockEvents = [
-        {
-            id: '1',
-            title: 'Weekly Kirtan Darbar',
-            description: 'Join us every Sunday for our weekly kirtan darbar featuring local ragis and community participation.',
-            eventDate: '2024-01-15',
-            startTime: '18:00',
-            endTime: '20:00',
-            locationName: 'Gurdwara Nanak Niwas',
-            fullAddress: 'Toronto, Canada',
-            isOnline: false,
-            organizer: 'Singh Sabha Toronto',
-            contactName: 'Jasbir Singh',
-            contactInfo: 'jasbir@example.com',
-            submittedAt: '2024-01-10T10:30:00Z',
-            approved: false
-        },
-        {
-            id: '2',
-            title: 'Gurmat Camp for Youth',
-            description: 'Educational camp focusing on Sikh history, Gurbani, and kirtan for young Sikhs.',
-            eventDate: '2024-01-20',
-            startTime: '09:00',
-            endTime: '17:00',
-            locationName: 'Khalsa School',
-            fullAddress: 'Vancouver, Canada',
-            isOnline: true,
-            streamingLink: 'https://youtube.com/live/example',
-            organizer: 'Khalsa Youth Organization',
-            contactName: 'Simran Kaur',
-            contactInfo: '+1-604-555-0123',
-            additionalNotes: 'Lunch will be provided. Please bring notebooks.',
-            submittedAt: '2024-01-08T14:20:00Z',
-            approved: false
-        }
-    ];
-
+    // Firestore functions for real data operations
     async function getPendingEvents() {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        return mockEvents.filter(event => !event.approved);
+        try {
+            const eventsRef = window.firebaseCollection(window.firebaseDb, 'events');
+            const q = window.firebaseQuery(eventsRef, window.firebaseWhere('approved', '==', false));
+            const querySnapshot = await window.firebaseGetDocs(q);
+            
+            const events = [];
+            querySnapshot.forEach((doc) => {
+                events.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            
+            return events;
+        } catch (error) {
+            console.error('Error fetching pending events:', error);
+            return [];
+        }
     }
 
     async function getPendingEventsCount() {
@@ -347,22 +311,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getApprovedEventsCount() {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 300));
-        return mockEvents.filter(event => event.approved).length;
-    }
-
-    async function simulateApproval(eventId) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const event = mockEvents.find(e => e.id === eventId);
-        if (event) {
-            event.approved = true;
+        try {
+            const eventsRef = window.firebaseCollection(window.firebaseDb, 'events');
+            const q = window.firebaseQuery(eventsRef, window.firebaseWhere('approved', '==', true));
+            const querySnapshot = await window.firebaseGetDocs(q);
+            return querySnapshot.size;
+        } catch (error) {
+            console.error('Error fetching approved events count:', error);
+            return 0;
         }
     }
 
-    async function simulateRejection(eventId) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        mockEvents = mockEvents.filter(e => e.id !== eventId);
+    async function getTotalEventsCount() {
+        try {
+            const eventsRef = window.firebaseCollection(window.firebaseDb, 'events');
+            const querySnapshot = await window.firebaseGetDocs(eventsRef);
+            return querySnapshot.size;
+        } catch (error) {
+            console.error('Error fetching total events count:', error);
+            return 0;
+        }
+    }
+
+    async function approveEventInFirestore(eventId) {
+        try {
+            const eventRef = window.firebaseDoc(window.firebaseDb, 'events', eventId);
+            await window.firebaseUpdateDoc(eventRef, { 
+                approved: true,
+                approvedAt: new Date().toISOString()
+            });
+            return true;
+        } catch (error) {
+            console.error('Error approving event:', error);
+            throw error;
+        }
+    }
+
+    async function rejectEventInFirestore(eventId) {
+        try {
+            const eventRef = window.firebaseDoc(window.firebaseDb, 'events', eventId);
+            await window.firebaseDeleteDoc(eventRef);
+            return true;
+        } catch (error) {
+            console.error('Error rejecting event:', error);
+            throw error;
+        }
     }
 
     function showToast(message, type = 'success') {

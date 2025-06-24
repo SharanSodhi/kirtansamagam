@@ -1,4 +1,6 @@
 // Submit Form Specific JavaScript
+import { db, collection, addDoc, serverTimestamp } from './firebase-config.js';
+
 document.addEventListener('DOMContentLoaded', () => {
     const eventForm = document.getElementById('event-form');
     const onlineEventCheckbox = document.getElementById('online-event');
@@ -75,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Form submission
     if (eventForm) {
-        eventForm.addEventListener('submit', (e) => {
+        eventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             // Validate description or poster requirement
@@ -89,7 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Create event object
             const newEvent = {
-                id: Date.now(), // Simple ID generation
                 title: formData.get('title'),
                 description: formData.get('description'),
                 poster: formData.get('poster')?.name || null,
@@ -105,7 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 organizer: formData.get('organizer'),
                 additionalNotes: formData.get('additional-notes'),
                 termsAccepted: formData.get('terms-consent') === 'on',
-                submittedAt: new Date().toISOString()
+                submittedAt: serverTimestamp(),
+                approved: false
             };
 
             // Validate required fields
@@ -114,23 +116,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Show success popup
-            showSuccessPopup();
-            
-            // Reset form
-            eventForm.reset();
-            if (streamingLinkContainer) {
-                streamingLinkContainer.classList.add('hidden');
-            }
-            
-            // Reset field requirements
-            descriptionField.setAttribute('required', 'required');
-            if (posterField) {
-                posterField.removeAttribute('required');
-            }
+            try {
+                // Add event to Firestore
+                const eventsRef = collection(db, 'events');
+                await addDoc(eventsRef, newEvent);
 
-            // In a real application, you would send this data to a backend
-            console.log('Event submitted:', newEvent);
+                // Show success popup
+                showSuccessPopup();
+                
+                // Reset form
+                eventForm.reset();
+                if (streamingLinkContainer) {
+                    streamingLinkContainer.classList.add('hidden');
+                }
+                
+                // Reset field requirements
+                descriptionField.setAttribute('required', 'required');
+                if (posterField) {
+                    posterField.removeAttribute('required');
+                }
+            } catch (error) {
+                console.error('Error submitting event:', error);
+                showToast('Error submitting event. Please try again.', 'error');
+            }
         });
     }
 });
