@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Event - Kirtan Samagam</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-50 font-[Mukta]">
+    <!-- Header -->
+    <header class="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm z-50">
+        <nav class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <a href="index.html" class="flex items-center space-x-3">
+                        <img src="images/khanda.svg" alt="Khanda Symbol" class="w-12 h-12 transform hover:scale-110 transition-transform">
+                        <span class="text-2xl font-bold bg-gradient-to-r from-amber-800 to-amber-600 bg-clip-text text-transparent">Kirtan Samagam</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex space-x-10">
+                    <a href="index.html" class="nav-link text-amber-900 hover:text-amber-600 font-medium">Home</a>
+                    <a href="index.html#events" class="nav-link text-amber-900 hover:text-amber-600 font-medium">Events</a>
+                    <a href="index.html#about" class="nav-link text-amber-900 hover:text-amber-600 font-medium">About</a>
+                </div>
+                <button id="mobile-menu-button" class="md:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden mt-4">
+                <div class="flex flex-col space-y-4 border-t border-amber-100 pt-4">
+                    <a href="index.html" class="nav-link text-amber-900 hover:text-amber-600 font-medium">Home</a>
+                    <a href="index.html#events" class="nav-link text-amber-900 hover:text-amber-600 font-medium">Events</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Submit Event Form Section -->
+    <section class="pt-32 pb-20">
+        <div class="container mx-auto px-4 max-w-4xl">
+            <h1 class="text-3xl md:text-4xl font-bold mb-8 text-center text-amber-900">Submit a Samagam</h1>
+            <form id="event-form" class="space-y-6 bg-white p-6 md:p-8 rounded-xl shadow-sm border border-amber-100">
+                
+                <!-- Event Title -->
+                <div>
+                    <label for="title" class="block text-amber-900 font-medium mb-2">Event Title* (ਸਮਾਗਮ ਦਾ ਨਾਮ)</label>
+                    <input type="text" id="title" name="title" required placeholder="Keep it concise"
+                        class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                </div>
+
+                <!-- Event Description and Image Upload -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="description" class="block text-amber-900 font-medium mb-2">Event Description* (ਸਮਾਗਮ ਦਾ ਵੇਰਵਾ)</label>
+                        <textarea id="description" name="description" rows="4" required placeholder="Can be short or detailed"
+                            class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"></textarea>
+                        <p class="text-sm text-gray-500 mt-1">Required if no image is uploaded</p>
+                    </div>
+                    <div>
+                        <label for="poster" class="block text-amber-900 font-medium mb-2">Upload Poster/Image (ਪੋਸਟਰ ਜਾਂ ਤਸਵੀਰ ਅੱਪਲੋਡ ਕਰੋ)</label>
+                        <input type="file" id="poster" name="poster" accept="image/jpeg,image/png,image/jpg"
+                            class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                        <p class="text-sm text-gray-500 mt-1">JPG/PNG, max 5MB. Required if no description</p>
+                    </div>
+                </div>
+
+                <!-- Date and Time -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="event-date" class="block text-amber-900 font-medium mb-2">Event Date* (ਸਮਾਗਮ ਦੀ ਤਾਰੀਖ)</label>
+                        <input type="date" id="event-date" name="event-date" required
+                            class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="start-time" class="block text-amber-900 font-medium mb-2">Start Time* (ਸ਼ੁਰੂ ਹੋਣ ਦਾ ਸਮਾਂ)</label>
+                        <input type="time" id="start-time" name="start-time" required
+                            class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="end-time" class="block text-amber-900 font-medium mb-2">End Time (ਸਮਾਪਤੀ ਦਾ ਸਮਾਂ)</label>
+                        <input type="time" id="end-time" name="end-time"
+                            class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="location-name" class="block text-amber-900 font-medium mb-2">Location Name* (ਸਥਾਨ ਦਾ ਨਾਮ)</label>
+                        <input type="text" id="location-name" name="location-name" required placeholder="E.g., Gurdwara Nanak Niwas"
+                            class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="full-address" class="block text-amber-900 font-medium mb-2">Full Address* (ਪੂਰਾ ਪਤਾ)</label>
+                        <input type="text" id="full-address" name="full-address" required placeholder="City, Country"
+                            class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <!-- Online Event -->
+                <div class="flex items-center">
+                    <input type="checkbox" id="online-event" name="online-event" class="mr-3 w-4 h-4 text-amber-600 focus:ring-amber-500 border-amber-300 rounded">
+                    <label for="online-event" class="text-amber-900 font-medium">Online Event (ਆਨਲਾਈਨ ਸਮਾਗਮ)</label>
+                </div>
+
+                <!-- Streaming Link -->
+                <div id="streaming-link-container" class="hidden">
+                    <label for="streaming-link" class="block text-amber-900 font-medium mb-2">Live Stream Link* (ਲਾਈਵ ਸਟ੍ਰੀਮ ਲਿੰਕ)</label>
+                    <input type="url" id="streaming-link" name="streaming-link" placeholder="YouTube, Facebook, etc."
+                        class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                </div>
+
+                <!-- Contact Information -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="contact-name" class="block text-amber-900 font-medium mb-2">Contact Name (ਸੰਪਰਕ ਕਰਨ ਵਾਲੇ ਦਾ ਨਾਮ)</label>
+                        <input type="text" id="contact-name" name="contact-name" placeholder="For follow-up"
+                            class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="contact-info" class="block text-amber-900 font-medium mb-2">Contact Phone/Email (ਫ਼ੋਨ ਨੰਬਰ ਜਾਂ ਈਮੇਲ)</label>
+                        <input type="text" id="contact-info" name="contact-info" placeholder="For direct queries"
+                            class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <!-- Organizer -->
+                <div>
+                    <label for="organizer" class="block text-amber-900 font-medium mb-2">Organizer/Gurdwara (ਆਯੋਜਕ ਜਾਂ ਗੁਰਦੁਆਰਾ)</label>
+                    <input type="text" id="organizer" name="organizer" placeholder="Shows who's hosting it"
+                        class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                </div>
+
+                <!-- Additional Notes -->
+                <div>
+                    <label for="additional-notes" class="block text-amber-900 font-medium mb-2">Additional Notes (ਵਾਧੂ ਜਾਣਕਾਰੀ)</label>
+                    <textarea id="additional-notes" name="additional-notes" rows="3" placeholder="Optional additional information"
+                        class="w-full px-4 py-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"></textarea>
+                </div>
+
+                <!-- Terms & Consent -->
+                <div class="flex items-start">
+                    <input type="checkbox" id="terms-consent" name="terms-consent" required class="mr-3 mt-1 w-4 h-4 text-amber-600 focus:ring-amber-500 border-amber-300 rounded">
+                    <label for="terms-consent" class="text-amber-900 text-sm">
+                        I confirm this is a real event and agree to the website terms and conditions.* (ਮੈਂ ਪੁਸ਼ਟੀ ਕਰਦਾ/ਦੀ ਹਾਂ ਕਿ ਇਹ ਇਕ ਅਸਲੀ ਸਮਾਗਮ ਹੈ...)
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                    class="w-full bg-amber-600 text-white py-4 rounded-lg hover:bg-amber-700 transition-colors font-medium text-lg shadow-md hover:shadow-lg">
+                    Submit Samagam (ਸਮਾਗਮ ਭੇਜੋ)
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-amber-900 text-amber-100 py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">About Us</h3>
+                    <p class="text-amber-200/80">Connecting the Sangat through divine kirtan and spiritual gatherings.</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-amber-200/80 hover:text-white">Home</a></li>
+                        <li><a href="index.html#events" class="text-amber-200/80 hover:text-white">Events</a></li>
+                        <li><a href="index.html#about" class="text-amber-200/80 hover:text-white">About</a></li>
+                    </ul>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Contact</h3>
+                    <p class="text-amber-200/80">Email: info@kirtansamagam.com</p>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-amber-800/50 text-center text-amber-200/60">
+                <p>&copy; 2024 Kirtan Samagam. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script src="js/submit-form-enhanced.js"></script>
+</body>
+</html>

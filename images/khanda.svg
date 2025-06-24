@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <g fill="#D97706">
+    <!-- Center Khanda -->
+    <path d="M50 5 L55 45 L45 45 Z"/>
+    <path d="M40 45 L60 45 L50 85 Z"/>
+    
+    <!-- Outer Circles -->
+    <circle cx="50" cy="50" r="45" stroke="#D97706" stroke-width="2" fill="none"/>
+    <circle cx="50" cy="50" r="40" stroke="#D97706" stroke-width="2" fill="none"/>
+    
+    <!-- Crossed Swords -->
+    <path d="M20 35 L80 65" stroke="#D97706" stroke-width="4" fill="none"/>
+    <path d="M20 65 L80 35" stroke="#D97706" stroke-width="4" fill="none"/>
+    
+    <!-- Sword Handles -->
+    <rect x="15" y="30" width="10" height="5" rx="2"/>
+    <rect x="75" y="30" width="10" height="5" rx="2"/>
+    <rect x="15" y="65" width="10" height="5" rx="2"/>
+    <rect x="75" y="65" width="10" height="5" rx="2"/>
+  </g>
+</svg>

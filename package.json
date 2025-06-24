@@ -1,0 +1,26 @@
+{
+  "name": "sikh-community-events",
+  "version": "1.0.0",
+  "description": "A modern website for managing and displaying Sikh community events and Kirtan Samagams",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "dev": "PORT=8000 python3 -m http.server"
+  },
+  "keywords": [
+    "sikh",
+    "events",
+    "community",
+    "kirtan",
+    "samagam"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "tailwindcss": "^3.4.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
+  }
+}
