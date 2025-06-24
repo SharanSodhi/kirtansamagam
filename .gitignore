@@ -30,3 +30,7 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Ignore Firebase service account credentials
+js/serviceAccountKey.json
+js/firebase-config.js
