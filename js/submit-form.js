@@ -1,6 +1,4 @@
 // Submit Form Specific JavaScript
-import { db, collection, addDoc, serverTimestamp } from './firebase-config.js';
-
 document.addEventListener('DOMContentLoaded', () => {
     const eventForm = document.getElementById('event-form');
     const onlineEventCheckbox = document.getElementById('online-event');
@@ -106,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 organizer: formData.get('organizer'),
                 additionalNotes: formData.get('additional-notes'),
                 termsAccepted: formData.get('terms-consent') === 'on',
-                submittedAt: serverTimestamp(),
                 approved: false
             };
 
@@ -117,9 +114,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                // Add event to Firestore
-                const eventsRef = collection(db, 'events');
-                await addDoc(eventsRef, newEvent);
+                // Add event to Firestore using compat SDK
+                const eventsRef = window.firebaseDb.collection('events');
+                await eventsRef.add({
+                    ...newEvent,
+                    submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
                 // Show success popup
                 showSuccessPopup();

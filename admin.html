@@ -4,68 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Kirtan Samagam</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
     
     <!-- Firebase SDK -->
-    <script type="module">
-        import { 
-            auth, 
-            db, 
-            signInWithEmailAndPassword, 
-            signOut, 
-            onAuthStateChanged,
-            collection,
-            getDocs,
-            doc,
-            updateDoc,
-            deleteDoc,
-            query,
-            where,
-            orderBy
-        } from './js/firebase-config.js';
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGW6FV6jwKQduHk2wqODC3Ihv6jCyWzV4",
+            authDomain: "kirtansamagam-b45b9.firebaseapp.com",
+            projectId: "kirtansamagam-b45b9",
+            storageBucket: "kirtansamagam-b45b9.firebasestorage.app",
+            messagingSenderId: "382581209872",
+            appId: "1:382581209872:web:054fb314d6695a54544395"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         // Make Firebase available globally
         window.firebaseAuth = auth;
         window.firebaseDb = db;
-        window.firebaseSignIn = signInWithEmailAndPassword;
-        window.firebaseSignOut = signOut;
-        window.firebaseOnAuthStateChanged = onAuthStateChanged;
-        window.firebaseQuery = query;
-        window.firebaseWhere = where;
-        window.firebaseCollection = collection;
-        window.firebaseGetDocs = getDocs;
-        window.firebaseDoc = doc;
-        window.firebaseUpdateDoc = updateDoc;
-        window.firebaseDeleteDoc = deleteDoc;
-        window.firebaseOrderBy = orderBy;
+        window.firebaseSignIn = (auth, email, password) => auth.signInWithEmailAndPassword(email, password);
+        window.firebaseSignOut = (auth) => auth.signOut();
+        window.firebaseOnAuthStateChanged = (auth, callback) => auth.onAuthStateChanged(callback);
+        window.firebaseQuery = (collection, ...constraints) => collection.where(...constraints);
+        window.firebaseWhere = (field, operator, value) => ({ field, operator, value });
+        window.firebaseCollection = (db, collectionName) => db.collection(collectionName);
+        window.firebaseGetDocs = (query) => query.get();
+        window.firebaseDoc = (db, collection, docId) => db.collection(collection).doc(docId);
+        window.firebaseUpdateDoc = (docRef, data) => docRef.update(data);
+        window.firebaseDeleteDoc = (docRef) => docRef.delete();
+        window.firebaseOrderBy = (field, direction) => ({ field, direction });
     </script>
-
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .khanda-icon {
-            width: 32px;
-            height: 32px;
-            background-image: url('images/khanda.svg');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-        }
-    </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 font-[Mukta]">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-amber-100">
+    <header class="fixed w-full bg-white/95 backdrop-blur-sm shadow-sm z-50">
         <nav class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-3">
-                    <div class="khanda-icon"></div>
-                    <h1 class="text-2xl font-bold text-amber-900">Admin Panel</h1>
+                    <img src="images/khanda.svg" alt="Khanda Symbol" class="w-12 h-12 transform hover:scale-110 transition-transform">
+                    <span class="text-2xl font-bold bg-gradient-to-r from-amber-800 to-amber-600 bg-clip-text text-transparent">Kirtan Samagam</span>
+                </div>
+                <div class="hidden md:flex space-x-10">
+                    <a href="index.html" class="nav-link text-amber-900 hover:text-amber-600 font-medium">Home</a>
+                    <a href="index.html#events" class="nav-link text-amber-900 hover:text-amber-600 font-medium">Events</a>
+                    <a href="index.html#about" class="nav-link text-amber-900 hover:text-amber-600 font-medium">About</a>
+                    <span class="nav-link text-amber-600 font-medium border-b-2 border-amber-600">Admin</span>
                 </div>
                 <div id="user-info" class="hidden">
                     <div class="flex items-center space-x-4">
@@ -75,12 +75,26 @@
                         </button>
                     </div>
                 </div>
+                <button id="mobile-menu-button" class="md:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden mt-4">
+                <div class="flex flex-col space-y-4 border-t border-amber-100 pt-4">
+                    <a href="index.html" class="nav-link text-amber-900 hover:text-amber-600 font-medium">Home</a>
+                    <a href="index.html#events" class="nav-link text-amber-900 hover:text-amber-600 font-medium">Events</a>
+                    <a href="index.html#about" class="nav-link text-amber-900 hover:text-amber-600 font-medium">About</a>
+                    <span class="nav-link text-amber-600 font-medium">Admin</span>
+                </div>
             </div>
         </nav>
     </header>
 
     <!-- Login Form -->
-    <div id="login-container" class="min-h-screen flex items-center justify-center">
+    <div id="login-container" class="min-h-screen flex items-center justify-center pt-20">
         <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full mx-4">
             <div class="text-center mb-8">
                 <div class="khanda-icon mx-auto mb-4"></div>
@@ -112,7 +126,7 @@
     </div>
 
     <!-- Admin Dashboard -->
-    <div id="admin-dashboard" class="hidden">
+    <div id="admin-dashboard" class="hidden pt-20">
         <div class="container mx-auto px-4 py-8">
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -192,6 +206,33 @@
             <p class="mt-2 text-gray-600">Processing...</p>
         </div>
     </div>
+
+    <footer class="bg-amber-900 text-amber-100 py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">About Us</h3>
+                    <p class="text-amber-200/80">Connecting the Sangat through divine kirtan and spiritual gatherings.</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-amber-200/80 hover:text-white">Home</a></li>
+                        <li><a href="index.html#events" class="text-amber-200/80 hover:text-white">Events</a></li>
+                        <li><a href="index.html#about" class="text-amber-200/80 hover:text-white">About</a></li>
+                        <li><a href="admin.html" class="text-amber-200/80 hover:text-white">Admin</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Contact</h3>
+                    <p class="text-amber-200/80">Email: info@kirtansamagam.com</p>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-amber-800/50 text-center text-amber-200/60">
+                <p>&copy; 2024 Kirtan Samagam. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Scripts -->
     <script src="js/admin.js"></script>
