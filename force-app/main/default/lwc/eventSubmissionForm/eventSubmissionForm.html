@@ -1,0 +1,113 @@
+<template>
+    <div class="slds-box slds-theme_default">
+        <h2 class="slds-text-heading_medium slds-m-bottom_medium">
+            Submit New Event
+        </h2>
+
+        <lightning-record-edit-form>
+            <div class="slds-grid slds-wrap slds-gutters">
+                <!-- Title -->
+                <div class="slds-col slds-size_1-of-1">
+                    <lightning-input
+                        type="text"
+                        label="Event Title"
+                        name="Title__c"
+                        value={eventData.Title__c}
+                        required
+                        onchange={handleInputChange}>
+                    </lightning-input>
+                </div>
+
+                <!-- Description -->
+                <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                    <lightning-textarea
+                        label="Description"
+                        name="Description__c"
+                        value={eventData.Description__c}
+                        onchange={handleInputChange}>
+                    </lightning-textarea>
+                </div>
+
+                <!-- Location -->
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-top_small">
+                    <lightning-input
+                        type="text"
+                        label="Location"
+                        name="Location__c"
+                        value={eventData.Location__c}
+                        required
+                        onchange={handleInputChange}>
+                    </lightning-input>
+                </div>
+
+                <!-- Event Date & Time -->
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-top_small">
+                    <lightning-input
+                        type="datetime"
+                        label="Event Date & Time"
+                        name="Event_Date__c"
+                        value={eventData.Event_Date__c}
+                        required
+                        onchange={handleInputChange}>
+                    </lightning-input>
+                </div>
+
+                <!-- Is Live Stream -->
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-top_small">
+                    <lightning-input
+                        type="checkbox"
+                        label="Live Stream Available"
+                        name="Is_Live__c"
+                        checked={eventData.Is_Live__c}
+                        onchange={handleInputChange}>
+                    </lightning-input>
+                </div>
+
+                <!-- Live Stream Link -->
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-top_small">
+                    <template if:true={eventData.Is_Live__c}>
+                        <lightning-input
+                            type="url"
+                            label="Live Stream Link"
+                            name="Live_Stream_Link__c"
+                            value={eventData.Live_Stream_Link__c}
+                            onchange={handleInputChange}>
+                        </lightning-input>
+                    </template>
+                </div>
+
+                <!-- File Upload -->
+                <div class="slds-col slds-size_1-of-1 slds-m-top_small">
+                    <lightning-file-upload
+                        label="Upload Images"
+                        name="fileUploader"
+                        accept={acceptedFormats}
+                        record-id={recordId}
+                        onuploadfinished={handleFileUpload}
+                        multiple>
+                    </lightning-file-upload>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="slds-col slds-size_1-of-1 slds-m-top_medium">
+                    <lightning-button
+                        label="Submit Event"
+                        variant="brand"
+                        onclick={handleSubmit}
+                        disabled={isSubmitting}>
+                    </lightning-button>
+                </div>
+            </div>
+        </lightning-record-edit-form>
+
+        <!-- Loading Spinner -->
+        <template if:true={isSubmitting}>
+            <lightning-spinner alternative-text="Submitting event..." variant="brand"></lightning-spinner>
+        </template>
+
+        <!-- Submission Note -->
+        <div class="slds-m-top_medium slds-text-body_small slds-text-color_weak">
+            Note: Your submission will be reviewed by the admin before going live.
+        </div>
+    </div>
+</template>
