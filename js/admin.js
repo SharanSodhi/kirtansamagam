@@ -1,3 +1,20 @@
+import { 
+    auth, 
+    db, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    onAuthStateChanged, 
+    collection, 
+    getDocs, 
+    query, 
+    where, 
+    updateDoc, 
+    doc, 
+    deleteDoc, 
+    serverTimestamp, 
+    deleteField 
+} from './firebase-config.js';
+
 // Admin Panel JavaScript
 document.addEventListener('DOMContentLoaded', () => {
     const loginContainer = document.getElementById('login-container');
@@ -11,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loading = document.getElementById('loading');
 
     // Check authentication state
-    window.firebaseOnAuthStateChanged(window.firebaseAuth, (user) => {
+    onAuthStateChanged(auth, (user) => {
         if (user) {
             // User is signed in
             showDashboard(user);
@@ -30,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             showLoading(true);
-            await window.firebaseSignIn(window.firebaseAuth, email, password);
+            await signInWithEmailAndPassword(auth, email, password);
             hideError();
         } catch (error) {
             showError(getErrorMessage(error.code));
@@ -42,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Logout button
     logoutBtn.addEventListener('click', async () => {
         try {
-            await window.firebaseSignOut(window.firebaseAuth);
+            await signOut(auth);
         } catch (error) {
             console.error('Logout error:', error);
         }
@@ -50,7 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Refresh button
     refreshBtn.addEventListener('click', () => {
-        loadPendingEvents();
+        loadAllEvents();
+    });
+
+    // Status filter
+    const statusFilter = document.getElementById('status-filter');
+    statusFilter.addEventListener('change', () => {
+        loadAllEvents();
     });
 
     function showLogin() {
@@ -67,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Load dashboard data
         loadDashboardStats();
-        loadPendingEvents();
+        loadAllEvents();
     }
 
     function showLoading(show) {
@@ -116,27 +139,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function loadPendingEvents() {
+    async function loadAllEvents() {
         try {
             showLoading(true);
             
-            const pendingEvents = await getPendingEvents();
+            const statusFilter = document.getElementById('status-filter').value;
+            let events = [];
             
-            const pendingContainer = document.getElementById('pending-events');
-            const noPendingMessage = document.getElementById('no-pending');
+            switch (statusFilter) {
+                case 'pending':
+                    events = await getPendingEvents();
+                    break;
+                case 'approved':
+                    events = await getApprovedEvents();
+                    break;
+                default:
+                    events = await getAllEvents();
+                    break;
+            }
             
-            if (pendingEvents.length === 0) {
-                pendingContainer.innerHTML = '';
-                noPendingMessage.classList.remove('hidden');
+            const eventsContainer = document.getElementById('events-container');
+            const noEventsMessage = document.getElementById('no-events');
+            
+            if (events.length === 0) {
+                eventsContainer.innerHTML = '';
+                noEventsMessage.classList.remove('hidden');
             } else {
-                noPendingMessage.classList.add('hidden');
-                pendingContainer.innerHTML = pendingEvents.map(event => createEventCard(event)).join('');
+                noEventsMessage.classList.add('hidden');
+                eventsContainer.innerHTML = events.map(event => createEventCard(event)).join('');
                 
                 // Add event listeners to action buttons
                 addEventListeners();
             }
         } catch (error) {
-            console.error('Error loading pending events:', error);
+            console.error('Error loading events:', error);
             showToast('Error loading events', 'error');
         } finally {
             showLoading(false);
@@ -146,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createEventCard(event) {
         const eventDate = new Date(event.eventDate);
         const submittedDate = new Date(event.submittedAt);
+        const isApproved = event.approved === true;
         
         return `
             <div class="p-6" data-event-id="${event.id}">
@@ -156,7 +193,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <h3 class="text-lg font-bold text-gray-900 mb-1">${event.title}</h3>
                                 <p class="text-sm text-gray-500">Submitted: ${submittedDate.toLocaleDateString()}</p>
                             </div>
-                            ${event.isOnline ? '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Online Event</span>' : ''}
+                            <div class="flex gap-2">
+                                ${event.isOnline ? '<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Online Event</span>' : ''}
+                                <span class="text-xs px-2 py-1 rounded-full ${isApproved ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
+                                    ${isApproved ? 'Approved' : 'Pending'}
+                                </span>
+                            </div>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -211,11 +253,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     
                     <div class="flex flex-col sm:flex-row lg:flex-col gap-2 lg:ml-6">
-                        <button class="approve-btn bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
-                            Approve
-                        </button>
+                        ${!isApproved ? `
+                            <button class="approve-btn bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                                Approve
+                            </button>
+                        ` : `
+                            <button class="unapprove-btn bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors text-sm font-medium">
+                                Unapprove
+                            </button>
+                        `}
                         <button class="reject-btn bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
-                            Reject
+                            Delete
                         </button>
                     </div>
                 </div>
@@ -236,13 +284,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Reject buttons
+        // Unapprove buttons
+        document.querySelectorAll('.unapprove-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const eventCard = e.target.closest('[data-event-id]');
+                const eventId = eventCard.dataset.eventId;
+                
+                if (confirm('Are you sure you want to unapprove this event?')) {
+                    await unapproveEvent(eventId);
+                }
+            });
+        });
+
+        // Reject/Delete buttons
         document.querySelectorAll('.reject-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const eventCard = e.target.closest('[data-event-id]');
                 const eventId = eventCard.dataset.eventId;
                 
-                if (confirm('Are you sure you want to reject and delete this event?')) {
+                if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
                     await rejectEvent(eventId);
                 }
             });
@@ -256,7 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await approveEventInFirestore(eventId);
             
             showToast('Event approved successfully!', 'success');
-            loadPendingEvents();
+            loadAllEvents();
             loadDashboardStats();
         } catch (error) {
             console.error('Error approving event:', error);
@@ -272,8 +332,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             await rejectEventInFirestore(eventId);
             
-            showToast('Event rejected and deleted', 'success');
-            loadPendingEvents();
+            showToast('Event deleted successfully', 'success');
+            loadAllEvents();
             loadDashboardStats();
         } catch (error) {
             console.error('Error rejecting event:', error);
@@ -283,24 +343,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Firestore functions for real data operations
-    async function getPendingEvents() {
+    // Firestore functions for real data operations using modular SDK
+    async function getAllEvents() {
         try {
-            const eventsRef = window.firebaseCollection(window.firebaseDb, 'events');
-            const q = window.firebaseQuery(eventsRef, window.firebaseWhere('approved', '==', false));
-            const querySnapshot = await window.firebaseGetDocs(q);
+            console.log('Fetching all events from Firestore...');
+            const eventsRef = collection(db, 'events');
+            const querySnapshot = await getDocs(eventsRef);
             
             const events = [];
             querySnapshot.forEach((doc) => {
+                const data = doc.data();
                 events.push({
                     id: doc.id,
-                    ...doc.data()
+                    ...data,
+                    submittedAt: data.submittedAt ? data.submittedAt.toDate() : new Date()
                 });
             });
             
+            console.log(`Fetched ${events.length} total events`);
+            return events;
+        } catch (error) {
+            console.error('Error fetching all events:', error);
+            return [];
+        }
+    }
+
+    async function getPendingEvents() {
+        try {
+            console.log('Fetching pending events from Firestore...');
+            const eventsRef = collection(db, 'events');
+            const q = query(eventsRef, where('approved', '==', false));
+            const querySnapshot = await getDocs(q);
+            
+            const events = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                events.push({
+                    id: doc.id,
+                    ...data,
+                    submittedAt: data.submittedAt ? data.submittedAt.toDate() : new Date()
+                });
+            });
+            
+            console.log(`Fetched ${events.length} pending events`);
             return events;
         } catch (error) {
             console.error('Error fetching pending events:', error);
+            return [];
+        }
+    }
+
+    async function getApprovedEvents() {
+        try {
+            console.log('Fetching approved events from Firestore...');
+            const eventsRef = collection(db, 'events');
+            const q = query(eventsRef, where('approved', '==', true));
+            const querySnapshot = await getDocs(q);
+            
+            const events = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                events.push({
+                    id: doc.id,
+                    ...data,
+                    submittedAt: data.submittedAt ? data.submittedAt.toDate() : new Date()
+                });
+            });
+            
+            console.log(`Fetched ${events.length} approved events`);
+            return events;
+        } catch (error) {
+            console.error('Error fetching approved events:', error);
             return [];
         }
     }
@@ -311,35 +424,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getApprovedEventsCount() {
-        try {
-            const eventsRef = window.firebaseCollection(window.firebaseDb, 'events');
-            const q = window.firebaseQuery(eventsRef, window.firebaseWhere('approved', '==', true));
-            const querySnapshot = await window.firebaseGetDocs(q);
-            return querySnapshot.size;
-        } catch (error) {
-            console.error('Error fetching approved events count:', error);
-            return 0;
-        }
+        const events = await getApprovedEvents();
+        return events.length;
     }
 
     async function getTotalEventsCount() {
-        try {
-            const eventsRef = window.firebaseCollection(window.firebaseDb, 'events');
-            const querySnapshot = await window.firebaseGetDocs(eventsRef);
-            return querySnapshot.size;
-        } catch (error) {
-            console.error('Error fetching total events count:', error);
-            return 0;
-        }
+        const events = await getAllEvents();
+        return events.length;
     }
 
     async function approveEventInFirestore(eventId) {
         try {
-            const eventRef = window.firebaseDoc(window.firebaseDb, 'events', eventId);
-            await window.firebaseUpdateDoc(eventRef, { 
+            console.log(`Approving event: ${eventId}`);
+            const eventRef = doc(db, 'events', eventId);
+            await updateDoc(eventRef, { 
                 approved: true,
-                approvedAt: new Date().toISOString()
+                approvedAt: serverTimestamp()
             });
+            console.log('Event approved successfully');
             return true;
         } catch (error) {
             console.error('Error approving event:', error);
@@ -347,13 +449,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function rejectEventInFirestore(eventId) {
+    async function unapproveEvent(eventId) {
         try {
-            const eventRef = window.firebaseDoc(window.firebaseDb, 'events', eventId);
-            await window.firebaseDeleteDoc(eventRef);
+            showLoading(true);
+            
+            await unapproveEventInFirestore(eventId);
+            
+            showToast('Event unapproved successfully!', 'success');
+            loadAllEvents();
+            loadDashboardStats();
+        } catch (error) {
+            console.error('Error unapproving event:', error);
+            showToast('Error unapproving event', 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function unapproveEventInFirestore(eventId) {
+        try {
+            console.log(`Unapproving event: ${eventId}`);
+            const eventRef = doc(db, 'events', eventId);
+            await updateDoc(eventRef, { 
+                approved: false,
+                approvedAt: deleteField()
+            });
+            console.log('Event unapproved successfully');
             return true;
         } catch (error) {
-            console.error('Error rejecting event:', error);
+            console.error('Error unapproving event:', error);
+            throw error;
+        }
+    }
+
+    async function rejectEventInFirestore(eventId) {
+        try {
+            console.log(`Deleting event: ${eventId}`);
+            const eventRef = doc(db, 'events', eventId);
+            await deleteDoc(eventRef);
+            console.log('Event deleted successfully');
+            return true;
+        } catch (error) {
+            console.error('Error deleting event:', error);
             throw error;
         }
     }

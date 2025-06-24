@@ -10,38 +10,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
     
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { 
-            auth, 
-            db, 
-            signInWithEmailAndPassword, 
-            signOut, 
-            onAuthStateChanged,
-            collection,
-            getDocs,
-            doc,
-            updateDoc,
-            deleteDoc,
-            query,
-            where,
-            orderBy
-        } from './js/firebase-config.js';
+    <!-- Firebase v8 Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGpAHia_wEmrhnmYjrPf1n1TrAzwEMiAI",
+            authDomain: "kirtansamagam.firebaseapp.com",
+            projectId: "kirtansamagam",
+            storageBucket: "kirtansamagam.appspot.com",
+            messagingSenderId: "381046409405",
+            appId: "1:381046409405:web:78fb0baa805a5dcf0c8f36"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
 
         // Make Firebase available globally
-        window.firebaseAuth = auth;
-        window.firebaseDb = db;
-        window.firebaseSignIn = signInWithEmailAndPassword;
-        window.firebaseSignOut = signOut;
-        window.firebaseOnAuthStateChanged = onAuthStateChanged;
-        window.firebaseQuery = query;
-        window.firebaseWhere = where;
-        window.firebaseCollection = collection;
-        window.firebaseGetDocs = getDocs;
-        window.firebaseDoc = doc;
-        window.firebaseUpdateDoc = updateDoc;
-        window.firebaseDeleteDoc = deleteDoc;
-        window.firebaseOrderBy = orderBy;
+        window.firebaseAuth = firebase.auth();
+        window.firebaseDb = firebase.firestore();
+        window.firebaseSignIn = (email, password) => firebase.auth().signInWithEmailAndPassword(email, password);
+        window.firebaseSignOut = () => firebase.auth().signOut();
+        window.firebaseOnAuthStateChanged = (callback) => firebase.auth().onAuthStateChanged(callback);
     </script>
 
     <style>
@@ -61,19 +54,22 @@
 <body class="bg-gray-50">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-amber-100">
-        <nav class="container mx-auto px-4 py-4">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <div class="khanda-icon"></div>
-                    <h1 class="text-2xl font-bold text-amber-900">Admin Panel</h1>
-                </div>
-                <div id="user-info" class="hidden">
-                    <div class="flex items-center space-x-4">
-                        <span id="user-email" class="text-gray-600"></span>
-                        <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
-                            Logout
-                        </button>
-                    </div>
+        <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="khanda-icon"></div>
+                <h1 class="text-2xl font-bold text-amber-900">Admin Panel</h1>
+            </div>
+            <nav class="space-x-4 hidden md:flex">
+                <a href="index.html" class="text-amber-600 hover:text-amber-800 text-sm font-medium">Home</a>
+                <a href="submit.html" class="text-amber-600 hover:text-amber-800 text-sm font-medium">Submit Event</a>
+                <a href="admin.html" class="text-amber-900 font-bold text-sm">Admin Panel</a>
+            </nav>
+            <div id="user-info" class="hidden">
+                <div class="flex items-center space-x-4">
+                    <span id="user-email" class="text-gray-600"></span>
+                    <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                        Logout
+                    </button>
                 </div>
             </div>
         </nav>
@@ -107,6 +103,12 @@
                 </button>
             </form>
             
+            <div class="mt-4 text-center">
+                <a href="setup-admin.html" class="text-amber-600 hover:text-amber-800 text-sm font-medium">
+                    Request Admin Signup
+                </a>
+            </div>
+
             <div id="login-error" class="hidden mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg"></div>
         </div>
     </div>
@@ -159,27 +161,34 @@
                 </div>
             </div>
 
-            <!-- Pending Events Section -->
+            <!-- All Events Section -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200">
                 <div class="p-6 border-b border-gray-200">
                     <div class="flex justify-between items-center">
-                        <h2 class="text-xl font-bold text-gray-900">Pending Events</h2>
-                        <button id="refresh-btn" class="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors">
-                            Refresh
-                        </button>
+                        <h2 class="text-xl font-bold text-gray-900">All Submitted Events</h2>
+                        <div class="flex gap-2">
+                            <select id="status-filter" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                                <option value="all">All Events</option>
+                                <option value="pending">Pending Only</option>
+                                <option value="approved">Approved Only</option>
+                            </select>
+                            <button id="refresh-btn" class="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition-colors">
+                                Refresh
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
-                <div id="pending-events" class="divide-y divide-gray-200">
-                    <!-- Pending events will be loaded here -->
+                <div id="events-container" class="divide-y divide-gray-200">
+                    <!-- Events will be loaded here -->
                 </div>
                 
-                <div id="no-pending" class="hidden p-8 text-center text-gray-500">
+                <div id="no-events" class="hidden p-8 text-center text-gray-500">
                     <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <p class="text-lg font-medium">No pending events</p>
-                    <p class="text-sm">All events have been reviewed</p>
+                    <p class="text-lg font-medium">No events found</p>
+                    <p class="text-sm">No events match the current filter</p>
                 </div>
             </div>
         </div>
@@ -194,6 +203,18 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/admin.js"></script>
+    <script type="module" src="js/admin.js"></script>
+
+    <!-- Footer -->
+    <footer class="bg-white shadow-inner border-t border-amber-100 mt-8">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <p class="text-gray-600 text-sm">&copy; 2025 Kirtan Samagam. All rights reserved.</p>
+            <nav class="space-x-4">
+                <a href="index.html" class="text-amber-600 hover:text-amber-800 text-sm font-medium">Home</a>
+                <a href="submit.html" class="text-amber-600 hover:text-amber-800 text-sm font-medium">Submit Event</a>
+                <a href="admin.html" class="text-amber-600 hover:text-amber-800 text-sm font-medium">Admin Panel</a>
+            </nav>
+        </div>
+    </footer>
 </body>
 </html>
