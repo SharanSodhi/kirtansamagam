@@ -51,6 +51,8 @@ function setupSmoothScroll() {
 }
 
 
+import { storage, getDownloadURL, ref } from './firebase-config.js';
+
 // Fetch events from Firestore
 async function fetchEventsFromFirestore() {
     try {
@@ -58,16 +60,28 @@ async function fetchEventsFromFirestore() {
         const q = query(eventsRef, where('approved', '==', true), orderBy('eventDate', 'asc'));
         const querySnapshot = await getDocs(q);
         
-        events = [];
-        querySnapshot.forEach((doc) => {
+        const eventsPromises = querySnapshot.docs.map(async (doc) => {
             const eventData = doc.data();
-            // Convert Firestore data to match existing event structure
-            events.push({
+            console.log('Raw event data:', eventData);
+            const eventDateStr = eventData.eventDate + 'T' + eventData.startTime;
+            const eventDateObj = new Date(eventDateStr);
+            console.log('Constructed event date:', eventDateObj);
+
+            let posterUrl = null;
+            if (eventData.poster) {
+                try {
+                    posterUrl = await getDownloadURL(ref(storage, eventData.poster));
+                } catch (error) {
+                    console.error('Error getting poster download URL:', error);
+                }
+            }
+
+            return {
                 id: doc.id,
                 title: eventData.title,
                 description: eventData.description,
                 location: eventData.locationName,
-                date: new Date(eventData.eventDate + 'T' + eventData.startTime).toISOString(),
+                date: eventDateObj.toISOString(),
                 isLive: eventData.isOnline && eventData.streamingLink,
                 streamLink: eventData.streamingLink || null,
                 organizer: eventData.organizer,
@@ -75,10 +89,12 @@ async function fetchEventsFromFirestore() {
                 contactInfo: eventData.contactInfo,
                 fullAddress: eventData.fullAddress,
                 endTime: eventData.endTime,
-                additionalNotes: eventData.additionalNotes
-            });
+                additionalNotes: eventData.additionalNotes,
+                poster: posterUrl
+            };
         });
-        
+
+        events = await Promise.all(eventsPromises);
         return events;
     } catch (error) {
         console.error('Error fetching events:', error);
@@ -135,6 +151,11 @@ function createEventCard(event) {
                 <h3 class="text-xl font-bold text-amber-900">${event.title}</h3>
                 ${event.isLive ? '<span class="live-badge bg-amber-600 text-white text-xs px-3 py-1 rounded-full font-medium">LIVE</span>' : ''}
             </div>
+            ${event.poster ? `
+                <div class="mb-4 cursor-pointer">
+                    <img src="${event.poster}" alt="Event Poster" class="max-w-full h-32 object-cover rounded-lg shadow-md" data-fullsrc="${event.poster}" />
+                </div>
+            ` : ''}
             <p class="text-gray-600 mb-6 leading-relaxed">${event.description || 'Event details will be updated soon.'}</p>
             <div class="text-sm text-gray-500 space-y-3">
                 <p class="flex items-center">
@@ -203,13 +224,48 @@ function showToast(message) {
     }, 3000);
 }
 
-// Initialize
+function setupImageModal() {
+    const modal = document.getElementById('image-modal');
+    const modalImage = document.getElementById('modal-image');
+    const closeBtn = document.getElementById('modal-close-btn');
+
+    if (!modal || !modalImage || !closeBtn) {
+        return;
+    }
+
+    // Close modal function
+    function closeModal() {
+        modal.classList.add('hidden');
+        modalImage.src = '';
+    }
+
+    // Close modal on close button click
+    closeBtn.addEventListener('click', closeModal);
+
+    // Close modal on clicking outside the image
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Delegate click event for event poster thumbnails
+    document.body.addEventListener('click', (e) => {
+        if (e.target.matches('.event-card img[data-fullsrc]')) {
+            const fullSrc = e.target.getAttribute('data-fullsrc');
+            modalImage.src = fullSrc;
+            modal.classList.remove('hidden');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     setupMobileMenu();
     setupEventForm();
     displayEvents();
     initSectionAnimations();
     setupSmoothScroll();
+    setupImageModal();
 });
 
 // Setup Event Form
@@ -221,36 +277,46 @@ function setupEventForm() {
     }
 
     if (eventForm) {
-        eventForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const newEvent = {
-                id: events.length + 1,
-                title: eventForm.title.value,
-                description: eventForm.description.value,
-                location: eventForm.location.value,
-                date: new Date(eventForm.date.value).toISOString(),
-                isLive: eventForm['is-live'].checked,
-                streamLink: eventForm['stream-link']?.value
-            };
+        // Check if required form elements exist before adding submit listener
+        const titleInput = eventForm.querySelector('input[name="title"]');
+        const descriptionInput = eventForm.querySelector('textarea[name="description"]');
+        const locationInput = eventForm.querySelector('input[name="location"]');
+        const dateInput = eventForm.querySelector('input[name="date"]');
+        const isLiveInput = eventForm.querySelector('input[name="is-live"]');
+        const streamLinkInput = eventForm.querySelector('input[name="stream-link"]');
 
-            // Add new event to the array (in a real app, this would be sent to a backend)
-            events.push(newEvent);
-            
-            // Show success message
-            showToast('Samagam submitted successfully!');
-            
-            // Reset form
-            eventForm.reset();
-            if (streamLinkContainer) {
-                streamLinkContainer.classList.add('hidden');
-            }
+        if (titleInput && descriptionInput && locationInput && dateInput && isLiveInput) {
+            eventForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const newEvent = {
+                    id: events.length + 1,
+                    title: titleInput.value,
+                    description: descriptionInput.value,
+                    location: locationInput.value,
+                    date: new Date(dateInput.value).toISOString(),
+                    isLive: isLiveInput.checked,
+                    streamLink: streamLinkInput ? streamLinkInput.value : null
+                };
 
-            // Redirect to homepage after 2 seconds
-            setTimeout(() => {
-                window.location.href = 'index.html#events';
-            }, 2000);
-        });
+                // Add new event to the array (in a real app, this would be sent to a backend)
+                events.push(newEvent);
+                
+                // Show success message
+                showToast('Samagam submitted successfully!');
+                
+                // Reset form
+                eventForm.reset();
+                if (streamLinkContainer) {
+                    streamLinkContainer.classList.add('hidden');
+                }
+
+                // Redirect to homepage after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'index.html#events';
+                }, 2000);
+            });
+        }
     }
 }
 

@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/tailwind.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -123,5 +123,13 @@
 
     <!-- Scripts -->
     <script type="module" src="js/main.js"></script>
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="relative max-w-4xl max-h-full p-4">
+            <button id="modal-close-btn" class="absolute top-2 right-2 text-white text-3xl font-bold hover:text-gray-300">&times;</button>
+            <img id="modal-image" src="" alt="Event Poster" class="max-w-full max-h-[80vh] rounded-lg shadow-lg" />
+        </div>
+    </div>
 </body>
 </html>

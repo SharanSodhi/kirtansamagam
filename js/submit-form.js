@@ -1,5 +1,5 @@
 // Submit Form Specific JavaScript
-import { db, collection, addDoc, serverTimestamp } from './firebase-config.js';
+import { db, collection, addDoc, serverTimestamp, storage, ref, uploadBytes, getDownloadURL } from './firebase-config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const eventForm = document.getElementById('event-form');
@@ -24,8 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Custom validation for description/poster requirement
     function validateDescriptionOrPoster() {
-        const hasDescription = descriptionField.value.trim().length > 0;
-        const hasPoster = posterField.files.length > 0;
+        const hasDescription = descriptionField ? descriptionField.value.trim().length > 0 : false;
+        const hasPoster = posterField ? posterField.files.length > 0 : false;
         
         if (!hasDescription && !hasPoster) {
             return false;
@@ -46,12 +46,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // If poster is uploaded, description is no longer required
-                if (descriptionField.hasAttribute('required')) {
+                if (descriptionField && descriptionField.hasAttribute('required')) {
                     descriptionField.removeAttribute('required');
                 }
             } else {
                 // If no poster, description becomes required again
-                if (!descriptionField.value.trim()) {
+                if (descriptionField && !descriptionField.value.trim()) {
                     descriptionField.setAttribute('required', 'required');
                 }
             }
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (posterField) {
                     posterField.removeAttribute('required');
                 }
-            } else if (!posterField.files.length) {
+            } else if (!(posterField && posterField.files.length)) {
                 // If no description and no poster, make poster required
                 if (posterField) {
                     posterField.setAttribute('required', 'required');
@@ -88,12 +88,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Create form data object
             const formData = new FormData(eventForm);
-            
+
+            // Upload poster file if exists
+            let posterStoragePath = null;
+            if (posterField && posterField.files.length > 0) {
+                const posterFile = posterField.files[0];
+                const storagePath = `posters/${Date.now()}_${posterFile.name}`;
+                const storageRef = ref(storage, storagePath);
+                try {
+                    await uploadBytes(storageRef, posterFile);
+                    posterStoragePath = storagePath;
+                } catch (uploadError) {
+                    console.error('Error uploading poster:', uploadError);
+                    showToast('Error uploading poster image. Please try again.', 'error');
+                    return;
+                }
+            }
+
             // Create event object
             const newEvent = {
                 title: formData.get('title'),
                 description: formData.get('description'),
-                poster: formData.get('poster')?.name || null,
+                poster: posterStoragePath,
                 eventDate: formData.get('event-date'),
                 startTime: formData.get('start-time'),
                 endTime: formData.get('end-time'),

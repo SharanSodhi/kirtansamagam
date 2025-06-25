@@ -34,3 +34,6 @@ yarn-error.log*
 # Ignore Firebase service account credentials
 js/firebase-config.js
 js/serviceAccountKey.json
+
+# .gitignore
+.env
